@@ -141,7 +141,7 @@ One of the main reasons I decided to use HA was to create a security alarm. Ther
 
 The icons at the top of your Home Assistant UI are sensors. They give you quick information about the state of various things you are tracking. The above forum posting has instructions on how to add a sensor to tell you for how long your TLS certificate is valid. Another popular sensor one is for weather. [Here are instructions](https://home-assistant.io/components/sensor.darksky/) for adding a different weather sensor via Dark Sky. You can also hide sensors, including those that are automatically generated for you. [This document](https://home-assistant.io/docs/configuration/customizing-devices/) outlines the steps necessary for that. You can find the `entity_id` for your sensors by clicking on them.
 
-## Configuration.yaml
+## Configuration yaml
 
 This is what my `configuration.yaml` currently looks like. The more difficult thing to understand initially was how `scripts` and `automations` relate. What I've found is that `scripts` are good ways to arrange a series of events, which you can call from an automation. Automations are ways to trigger certain actions on a state change - motion detected, window opened - and to place conditions on those triggers - alarm active.
 
@@ -265,7 +265,7 @@ group: !include groups.yaml
 automation: !include automations.yaml
 ```
 
-## Customize.yaml
+## Customize yaml
 
 I got a bit tired of turning off all the sensors associated with my ZWave components, so I put them in a separate file.
 
@@ -327,7 +327,7 @@ automation.arm_noisy_alarm:
   hidden: true
 ```
 
-## Automations.yaml
+## Automations yaml
 
 I made a couple automations to trigger an alarm if any sensors in my ZWave group go off. I also have some for turning on and off the night vision on my phone camera depending on the sun's position.
 
@@ -380,7 +380,7 @@ The entity names are essentially the lower-case type of entity followed by a per
       entity_id: switch.ip_webcam_night_vision
 ```
 
-## Groups.yaml
+## Groups yaml
 
 I made a ZWave group to watch in order to trigger my automations.
 
