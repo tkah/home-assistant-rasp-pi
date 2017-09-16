@@ -11,14 +11,14 @@ __Table of Contents__
 * [Setup Wifi on Pi](#setup-wifi-on-pi)
 * [Install Samba](#install-samba)
 * [Remote Access with LetsEncrypt and DuckDNS](#remote-access-with-letsencrypt-and-duckdns)
-* [Semi-Kiosk](#Semi-Kiosk)
-* [HTML5 Push Notifications](#HTML5 Push Notifications)
-* [Z-Wave Network](#Z-Wave Network)
-* [Sensors Introduction](#Sensors Introduction)
-* [Configuration.yaml](#Configuration.yaml)
-* [Customize.yaml](#Customize.yaml)
-* [Automations.yaml](#Automations.yaml)
-* [Groups.yaml](#Groups.yaml)
+* [Semi-Kiosk](#semi-kiosk)
+* [HTML5 Push Notifications](#html5-push-notifications)
+* [Z-Wave Network](#z-wave-network)
+* [Sensors Introduction](#sensors-introduction)
+* [Configuration.yaml](#configuration.yaml)
+* [Customize.yaml](#customize.yaml)
+* [Automations.yaml](#automations.yaml)
+* [Groups.yaml](#groups.yaml)
 
 ## Shopping List
 
