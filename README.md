@@ -124,7 +124,8 @@ Each item on the shopping list above has an instruction pamphlet describing how 
 
 One of the main reasons I decided to use HA was to create a security alarm. There are a few options for this. The one I decided on was the [Manual Alarm Control Panel](https://home-assistant.io/components/alarm_control_panel.manual/). I made two - one to fire a silent alarm notification and the other to set off my alarm siren.
 
-```alarm_control_panel:
+```
+alarm_control_panel:
   - platform: manual
     name: "Silent Alarm"
     pending_time: 45
@@ -145,7 +146,8 @@ The icons at the top of your Home Assistant UI are sensors. They give you quick 
 
 This is what my `configuration.yaml` currently looks like. The more difficult thing to understand initially was how `scripts` and `automations` relate. What I've found is that `scripts` are good ways to arrange a series of events, which you can call from an automation. Automations are ways to trigger certain actions on a state change - motion detected, window opened - and to place conditions on those triggers - alarm active.
 
-```homeassistant:
+```
+homeassistant:
   # Name of the location where Home Assistant is running
   name: Home
   # Location required to calculate the time the sun rises and sets
@@ -271,7 +273,8 @@ I got a bit tired of turning off all the sensors associated with my ZWave compon
 
 You cna find the names of the sensors in the UI by clicking on the sensor you'd like to hide.
 
-```sensor.living_room_motion_detector_alarm_level:
+```
+sensor.living_room_motion_detector_alarm_level:
   hidden: true
 sensor.living_room_motion_detector_alarm_type:
   hidden: true
@@ -333,7 +336,8 @@ I made a couple automations to trigger an alarm if any sensors in my ZWave group
 
 The entity names are essentially the lower-case type of entity followed by a period followed by the lower-case name with underscores in place of spaces.
 
-```- alias: Arm Silent Alarm
+```
+- alias: Arm Silent Alarm
   trigger:
     - platform: state
       entity_id: group.alarm_triggers
@@ -384,7 +388,8 @@ The entity names are essentially the lower-case type of entity followed by a per
 
 I made a ZWave group to watch in order to trigger my automations.
 
-```alarm_triggers:
+```
+alarm_triggers:
     name: Alarm Triggers
     entities:
       - binary_sensor.living_room_motion_detector_sensor
