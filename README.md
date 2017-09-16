@@ -15,10 +15,10 @@ __Table of Contents__
 * [HTML5 Push Notifications](#html5-push-notifications)
 * [Z-Wave Network](#z-wave-network)
 * [Sensors Introduction](#sensors-introduction)
-* [Configuration.yaml](#configuration-yaml)
-* [Customize.yaml](#customize-yaml)
-* [Automations.yaml](#automations-yaml)
-* [Groups.yaml](#groups-yaml)
+* [Configuration yaml](#configuration-yaml)
+* [Customize yaml](#customize-yaml)
+* [Automations yaml](#automations-yaml)
+* [Groups yaml](#groups-yaml)
 
 ## Shopping List
 
