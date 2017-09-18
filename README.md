@@ -73,7 +73,7 @@ Follow [these instructions](https://www.raspberrypi.org/documentation/configurat
 
 ## Install Samba
 
-To make your Pi a shared drive you can access from your local network, use [Samba](https://www.samba.org/). Installation instructions [here](https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md).
+To make your Pi a shared drive you can access from your local network, use [Samba](https://www.samba.org/). Installation instructions [here](https://www.youtube.com/watch?v=iQwWEsuRWUw).
 
 ## Remote Access with LetsEncrypt and DuckDNS
 
