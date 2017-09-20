@@ -10,6 +10,7 @@ __Table of Contents__
 * [Home Assistant, Touchscreen, Case, Pi Installation](#home-assistant-touchscreen-case-pi-installation)
 * [Setup Wifi on Pi](#setup-wifi-on-pi)
 * [Install Samba](#install-samba)
+* [Auto-Updates](#auto-updates)
 * [Remote Access with Nginx, LetsEncrypt, and DuckDNS](#remote-access-with-nginx-letsencrypt-and-duckdns)
 * [Semi-Kiosk](#semi-kiosk)
 * [HTML5 Push Notifications](#html5-push-notifications)
