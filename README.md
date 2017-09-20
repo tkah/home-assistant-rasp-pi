@@ -36,7 +36,7 @@ __Table of Contents__
 
 ## Home Assistant, Touchscreen, Case, Pi Installation
 
-[Hass.io](https://home-assistant.io/hassio/) - Easiest way to install HA. However, no current support for touchscreen kiosk mode using server making an alternative necessary for now.
+[Hass.io](https://home-assistant.io/hassio/) - Easiest way to install HA. However, no current support for touchscreen kiosk mode using server.
 
 Another alternative is the [all-in-one installer](https://home-assistant.io/docs/installation/raspberry-pi-all-in-one/). The issue I had with this was that the installer was behind the newest version of Raspbian when I tried it.
 
