@@ -43,7 +43,7 @@ Another alternative is the [all-in-one installer](https://home-assistant.io/docs
 So, I installed using a [python virtual environment](https://home-assistant.io/docs/installation/virtualenv/). This might be the more complex installer for non-programmers, but it's really not so bad.
 
 1. Download Raspbian image [here](https://www.raspberrypi.org/downloads/raspbian/)
-   * I chose the __Stretch Pixel__ to make setting up a Kiosk mode easier.
+   * I chose the __Stretch Desktop__ to make setting up a Kiosk mode easier.
 2. Burn image to SDCard using [Etcher](https://etcher.io/) or something similar.
 3. If you're going to `ssh` into your pi, then you'll want to add an `ssh` directory to the root of your image.
 4. Insert SDCard into Pi.
@@ -57,12 +57,12 @@ So, I installed using a [python virtual environment](https://home-assistant.io/d
 8. Use default user: `pi` and password: `raspberry` to login to command line.
 9. Install updates: `sudo apt-get update && sudo apt-get upgrade -y`
 10. Localize install: `sudo raspi-config`
-   * Reset default password
-   * Change timezone
-   * Change keyboard settings if necessary
+    * Reset default password
+    * Change timezone
+    * Change keyboard settings if necessary
 11. `sudo reboot` to restart with new settings
 12. Follow [virtualenv instructions](https://home-assistant.io/docs/installation/virtualenv/) to complete installation of Home Assistant.
-   * This site also has simple steps for upgrading your HA install.
+    * This site also has simple steps for upgrading your HA install.
 13. Follow [these instructions](https://home-assistant.io/docs/autostart/systemd/) to set your HA instance to automatically start when your pi starts.
 14. This might be a good time to go ahead and run `sudo apt-get install libudev-dev`, which will allow you to run ZWave components.
 15. Once all of the setup is complete, add a login password to Home Assistant. The instructions can be found [here](https://home-assistant.io/docs/configuration/basic/).
@@ -123,7 +123,7 @@ My router is somewhat limited in the realm of port forwarding. Using `nginx` as 
 
 ## HTML5 Push Notifications
 
-To receive HTML push notifications on my mobile device, I followed the instructions outlined in [this forum post](https://community.home-assistant.io/t/guide-how-to-set-up-duckdns-ssl-and-chrome-push-notifications/9722) from above. Some things had to change, such as the location for the `index.html` file where the `meta` tag goes. I have `python3.5` installed so the directory was slightly different. Also, the process of registering my domain with Google was slightly different than what was described. I registered through Google's Search Console. Lastly, the service in HA is now called `notify` rather than `html5`. Removing and reinstalling `pywebpush` was unnecessary as well. Still, most of it was spot on.
+To receive HTML push notifications on my mobile device, I followed the instructions outlined in [this forum post](https://community.home-assistant.io/t/guide-how-to-set-up-duckdns-ssl-and-chrome-push-notifications/9722) from above. Some things had to change, such as the location for the `index.html` file where the `meta` tag goes. I have `python3.5` installed so the directory was slightly different. Also, the process of registering my domain with Google was slightly different than what was described. I registered through the [Google Search Console](https://www.google.com/webmasters/tools/). Lastly, the service in HA is now called `notify` rather than `html5`. Removing and reinstalling `pywebpush` was unnecessary as well. Still, most of it was spot on.
 
 ## Z-Wave Network
 
