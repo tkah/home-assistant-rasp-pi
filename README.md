@@ -2,7 +2,7 @@
 
 These are the steps I took to set up my Home Assistant Raspberry Pi system. I've written them mostly so I can recreate the process again without having to search everywhere for the details. However, they should be useful to others setting up a similar system. The only knowledge I assume you have is some basic familiarity with the command line and how to save/close files using `nano` or `vim`.
 
-__System Description__: Server Kiosk, alarm, motion sensor, door/window sensor
+__System Description__: Pi, server kiosk, alarm, motion sensor, door/window sensor, old Android smartphone
 
 __Table of Contents__
 
@@ -16,9 +16,11 @@ __Table of Contents__
 * [HTML5 Push Notifications](#html5-push-notifications)
 * [Z-Wave Network](#z-wave-network)
 * [Sensors Introduction](#sensors-introduction)
+* [Android IP Webcam](#android-ip-webcam)
 * [Configuration yaml](#configuration-yaml)
 * [Customize yaml](#customize-yaml)
 * [Automations yaml](#automations-yaml)
+* [Scripts yaml](#scripts-yaml)
 * [Groups yaml](#groups-yaml)
 
 ## Shopping List
@@ -166,6 +168,28 @@ alarm_control_panel:
 
 The icons at the top of your Home Assistant UI are sensors. They give you quick information about the state of various things you are tracking. For example, a popular sensor for weather is **DarkSky**. [Here are instructions](https://home-assistant.io/components/sensor.darksky/) for adding it to your setup. You can also hide sensors, including those that are automatically generated for you. [This document](https://home-assistant.io/docs/configuration/customizing-devices/) outlines the steps necessary for that. You can find the `entity_id` for your sensors by clicking on them.
 
+## Android IP Webcam
+
+I do plan on buying a nice webcam at some point, but for now I'm using an old Samsung S3 as my front-door camera. You can turn your Android smartphone into a webcam by downloading the [IP Webcam](https://play.google.com/store/apps/details?id=com.pas.webcam.pro&hl=en) app from the Google Play store. There are free and paid versions. Once you install the app, you can configure a few things in the settings.
+
+* **Motion and sound detection**
+   * Check *Enable motion detection*
+   * Check *Enable sound detection*
+* **Data logging**
+   * Check *Enable data logging*
+   * This setting and those previous will allow you to use your phone in HA for motion detection.
+* Check **Stream device on boot** if your phone is a dedicated camera.
+* If you want to email pictures to yourself when motion is detected:
+   * **Plug-ins** > *Install and manage scripts* > *Email on modet*
+   * When that plugin downloads, go back a screen and turn it on.
+   * After tapping the on button, tap on *Email on modet* in the **Plug-ins** page to take you to an options page for the plugin.
+   * Tap on *Install uploader plugin* to be taken back to the Play store to another app by the same developer which will enable you to send yourself emails.
+   * Once this uploader plugin is installed you'll need to tap on *Select uploader* and choose *Email uploader* which will take you to another options page where you can fill in your email credentials.
+   * If you're using Gmail along with 2-factor authentication, you can get an "App Password" by following [these instructions](https://support.google.com/accounts/answer/185833?hl=en).
+   * More app config info can be found about half-way down [this *howtogeek* tutorial](https://www.howtogeek.com/139373/how-to-turn-an-old-android-phone-into-a-networked-security-camera/).
+
+You'll also want to give your phone a static IP address in order to tie things in on the HA side. For more on configuring HA see [here](https://www.howtogeek.com/139373/how-to-turn-an-old-android-phone-into-a-networked-security-camera/).
+
 ## Configuration yaml
 
 This is what my `configuration.yaml` currently looks like. The more difficult thing to understand initially was how `scripts` and `automations` relate. What I've found is that `scripts` are good ways to arrange a series of events, which you can call from any number of automations. Automations are ways to trigger certain actions on a state change - motion detected, window opened - and to place conditions on those triggers - alarm active.
@@ -185,17 +209,18 @@ homeassistant:
   time_zone: America/Denver
   customize: !include customize.yaml
 
-#android_ip_webcam:
-#  - host: 192.168.0.20
-#    username:
-#    password:
-#    sensors:
-#      - battery_level
-#      - battery_temp
-#      - motion
-#    switches:
-#      - video_recording
-#      - night_vision
+android_ip_webcam:
+  - host:
+    name: 'Front Door'
+    username:
+    password:
+    sensors:
+      - battery_level
+      - battery_temp
+      - motion
+    switches:
+      - video_recording
+      - night_vision
 
 alarm_control_panel:
   - platform: manual
@@ -256,23 +281,7 @@ sensor:
     scan_interval: 10800
     command: "ssl-cert-check ..."
 
-script:
-  silent_alarm_script:
-    sequence:
-      - alias: Push Notification Silent Alarm
-        service: notify.notify
-        data:
-          message: 'Alert! Alarm has gone off.'
-      - alias: Google Home Alert
-        service: tts.google_say
-        entity_id: media_player.living_room_home
-        data:
-          message: 'Intruder detected.'
-  noisy_alarm_script:
-    sequence:
-      - alias: Siren Noisy Alarm
-        service: switch.turn_on
-        entity_id: switch.gocontrol_siren_and_strobe_switch
+script: !include scripts.yaml
 
 # Text to speech
 tts:
@@ -336,15 +345,25 @@ sensor.lyras_window_burglar:
   hidden: true
 sensor.lyras_window_power_management:
   hidden: true
-sensor.lyras_window_sourcenodeid:
-  hidden: true
 script.silent_alarm_script:
   hidden: true
 script.noisy_alarm_script:
   hidden: true
+script.front_door_motion:
+  hidden: true
+script.night_vision_off:
+  hidden: true
+script.night_vision_on:
+  hidden: true
 automation.arm_silent_alarm:
   hidden: true
 automation.arm_noisy_alarm:
+  hidden: true
+automation.front_door_motion:
+  hidden: true
+automation.night_vision_camera_off:
+  hidden: true
+automation.night_vision_camera_on:
   hidden: true
 ```
 
@@ -385,21 +404,68 @@ The entity names are essentially the lower-case type of entity followed by a per
     - service: script.turn_on
       entity_id: script.silent_alarm_script
 
+- alias: Front Door Motion
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.front_door_motion
+      above: '5'
+  action:
+    - service: script.turn_on
+      entity_id: script.front_door_motion
+
 - alias: Night Vision Camera On
   trigger:
     - platform: sun
       event: sunset
   action:
-    - service: switch.turn_on
-      entity_id: switch.ip_webcam_night_vision
+    - service: script.turn_on
+      entity_id: script.night_vision_on
 
 - alias: Night Vision Camera Off
   trigger:
     - platform: sun
       event: sunrise
   action:
-    - service: switch.turn_off
-      entity_id: switch.ip_webcam_night_vision
+    - service: script.turn_on
+      entity_id: script.night_vision_off
+```
+
+## Scripts yaml
+
+```yaml
+silent_alarm_script:
+  sequence:
+    - alias: Push Notification Silent Alarm
+      service: notify.notify
+      data:
+        message: 'Alert! Alarm has gone off.'
+    - alias: Google Home Warning
+      service: tts.google_say
+      entity_id: media_player.living_room_home
+      data:
+        message: 'Intruder detected. The authorities have been notified.'
+noisy_alarm_script:
+  sequence:
+    - alias: Siren Noisy Alarm
+      service: switch.turn_on
+      entity_id: switch.siren
+front_door_motion:
+  sequence:
+    - alias: Google Home Front Door
+      service: tts.google_say
+      entity_id: media_player.living_room_home
+      data:
+        message: 'Someone is near the front door.'
+night_vision_on:
+  sequence:
+    - alias: Night Vision On
+      service: switch.turn_on
+      entity_id: switch.front_door_night_vision
+night_vision_off:
+  sequence:
+    - alias: Night Vision Off
+      service: switch.turn_off
+      entity_id: switch.front_door_night_vision
 ```
 
 ## Groups yaml
