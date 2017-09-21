@@ -190,6 +190,25 @@ I do plan on buying a nice webcam at some point, but for now I'm using an old Sa
 
 You'll also want to give your phone a static IP address in order to tie things in on the HA side. For more on configuring HA see [here](https://www.howtogeek.com/139373/how-to-turn-an-old-android-phone-into-a-networked-security-camera/).
 
+```yaml
+android_ip_webcam:
+  - host: !secret front_door_webcam_ip_address
+    name: 'Front Door'
+    username: !secret front_door_webcam_user
+    password: !secret front_door_webcam_password
+    sensors:
+      - battery_level
+      - battery_temp
+      - motion
+    switches:
+      - video_recording
+      - night_vision
+```
+
+## Secrets
+
+If you'd like to share your configuration files with other people without worrying about exposing your passwords, IP addresses, etc., you can use [secrets](https://home-assistant.io/docs/configuration/secrets/).
+
 ## Configuration yaml
 
 This is what my `configuration.yaml` currently looks like. The more difficult thing to understand initially was how `scripts` and `automations` relate. What I've found is that `scripts` are good ways to arrange a series of events, which you can call from any number of automations. Automations are ways to trigger certain actions on a state change - motion detected, window opened - and to place conditions on those triggers - alarm active.
@@ -199,10 +218,10 @@ homeassistant:
   # Name of the location where Home Assistant is running
   name: Home
   # Location required to calculate the time the sun rises and sets
-  latitude:
-  longitude:
+  latitude: !secret ha_latitude
+  longitude: !secret ha_longitude
   # Impacts weather/sunrise data (altitude above sea level in meters)
-  elevation: 1596
+  elevation:
   # metric for Metric, imperial for Imperial
   unit_system: imperial
   # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -210,10 +229,10 @@ homeassistant:
   customize: !include customize.yaml
 
 android_ip_webcam:
-  - host:
+  - host: !secret front_door_webcam_ip_address
     name: 'Front Door'
-    username:
-    password:
+    username: !secret front_door_webcam_user
+    password: !secret front_door_webcam_password
     sensors:
       - battery_level
       - battery_temp
@@ -242,7 +261,7 @@ config:
 
 http:
   # Uncomment this to add a password (recommended!)
-  api_password:
+  api_password: !secret http_password
 
 # Checks for available updates
 # Note: This component will send some information about your system to
@@ -256,8 +275,8 @@ updater:
 
 notify:
   platform: html5
-  gcm_api_key:
-  gcm_sender_id:
+  gcm_api_key: !secret google_notify_gcm_api_key
+  gcm_sender_id: !secret google_notify_gcm_sender_id
 
 # Discover some devices automatically
 discovery:
@@ -279,7 +298,7 @@ sensor:
     name: SSL Cert Expiry
     unit_of_measurement: days
     scan_interval: 10800
-    command: "ssl-cert-check ..."
+    command: !secret expiration_sensor_command
 
 script: !include scripts.yaml
 
