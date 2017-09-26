@@ -1,6 +1,8 @@
 # Raspberry Pi Home Assistant Setup
 
-These are the steps I took to set up my Home Assistant Raspberry Pi system. I've written them mostly so I can recreate the process again without having to search everywhere for the details. However, they should be useful to others setting up a similar system. The only knowledge I assume you have is some basic familiarity with the command line and how to save/close files using `nano` or `vim`.
+These are the steps I took to set up my Home Assistant Raspberry Pi system. I've written them mostly so I can recreate the process again without having to search everywhere for the details. However, they should be useful to others setting up a similar system. I assume you have some basic familiarity with the command line and how to save/close files using `nano` or `vim`. I don't go into detail about what exactly each line in my config does, but you should be able to figure it out from reading it.
+
+If you do try to follow these instructions for yourself and get tripped up by something, feel free to put in an Issue and I'll take a look when I get a chance.
 
 __System Description__: Pi, server kiosk, alarm, motion sensor, door/window sensor, old Android smartphone
 
@@ -17,6 +19,8 @@ __Table of Contents__
 * [Z-Wave Network](#z-wave-network)
 * [Sensors Introduction](#sensors-introduction)
 * [Android IP Webcam](#android-ip-webcam)
+* [Device Tracking](#device-tracking)
+* [Secrets](#secrets)
 * [Configuration yaml](#configuration-yaml)
 * [Customize yaml](#customize-yaml)
 * [Automations yaml](#automations-yaml)
@@ -125,7 +129,27 @@ My router is somewhat limited in the realm of port forwarding. Using `nginx` as 
 
 ## HTML5 Push Notifications
 
+There are multiple ways to receive notifications from Home Assistant. You can learn about many of them [here](https://home-assistant.io/components/notify/).
+
 To receive HTML push notifications on my mobile device, I followed the instructions outlined in [this forum post](https://community.home-assistant.io/t/guide-how-to-set-up-duckdns-ssl-and-chrome-push-notifications/9722) from above. Some things had to change, such as the location for the `index.html` file where the `meta` tag goes. I have `python3.5` installed so the directory was slightly different. Also, the process of registering my domain with Google was slightly different than what was described. I registered through the [Google Search Console](https://www.google.com/webmasters/tools/). Lastly, the service in HA is now called `notify` rather than `html5`. Removing and reinstalling `pywebpush` was unnecessary as well. Still, most of it was spot on.
+
+**configuration.yaml**
+```yaml
+  notify:
+    - platform: html5
+      gcm_api_key: !secret google_notify_gcm_api_key
+      gcm_sender_id: !secret google_notify_gcm_sender_id
+```
+
+**scripts.yaml**
+```yaml
+  silent_alarm_script:
+    sequence:
+      - alias: Push Notification Silent Alarm
+        service: notify.notify
+        data:
+          message: 'Alert! Alarm has gone off.'
+```
 
 ## Z-Wave Network
 
@@ -146,10 +170,11 @@ It's also nice to set a symlink to your USB device so that if you move your dong
 
 ## Alarm Panel
 
-One of the main reasons I decided to use HA was to create a security alarm. There are a few options for this. The one I decided on was the [Manual Alarm Control Panel](https://home-assistant.io/components/alarm_control_panel.manual/). I made two - one to fire a silent alarm notification and the other to set off my alarm siren.
+One of the main reasons I decided to use HA was to create a security alarm. There are a few options for this. The one I decided on was the [Manual Alarm Control Panel](https://home-assistant.io/components/alarm_control_panel.manual/). I made two - one to fire a silent alarm notification and the other to set off my alarm siren, though this was likely unnecessary as the alarm has two triggers I could've used.
 
 The status of these will be used by my **automations** to determine whether or not to fire the alarm script(s).
 
+**configuration.yaml**
 ```yaml
 alarm_control_panel:
   - platform: manual
@@ -164,9 +189,24 @@ alarm_control_panel:
     disarm_after_trigger: false
 ```
 
+**automation.yaml**
+```yaml
+  - alias: Arm Silent Alarm
+    trigger:
+      - platform: state
+        entity_id: group.alarm_triggers
+        from: 'off'
+        to: 'on'
+    condition:
+      condition: state
+      entity_id: alarm_control_panel.silent_alarm
+      state: armed_away
+    ...
+```
+
 ## Sensors Introduction
 
-The icons at the top of your Home Assistant UI are sensors. They give you quick information about the state of various things you are tracking. For example, a popular sensor for weather is **DarkSky**. [Here are instructions](https://home-assistant.io/components/sensor.darksky/) for adding it to your setup. You can also hide sensors, including those that are automatically generated for you. [This document](https://home-assistant.io/docs/configuration/customizing-devices/) outlines the steps necessary for that. You can find the `entity_id` for your sensors by clicking on them.
+The icons at the top of your Home Assistant UI are [sensors](https://home-assistant.io/components/sensor/). They give you quick information about the state of various things you are tracking. For example, a popular sensor for weather is **DarkSky**. [Here are instructions](https://home-assistant.io/components/sensor.darksky/) for adding it to your setup. You can also hide sensors, including those that are automatically generated for you. [This document](https://home-assistant.io/docs/configuration/customizing-devices/) outlines the steps necessary for that. You can find the `entity_id` for your sensors by clicking on them.
 
 ## Android IP Webcam
 
@@ -179,30 +219,119 @@ I do plan on buying a nice webcam at some point, but for now I'm using an old Sa
    * Check *Enable data logging*
    * This setting and those previous will allow you to use your phone in HA for motion detection.
 * Check **Stream device on boot** if your phone is a dedicated camera.
-* If you want to email pictures to yourself when motion is detected:
-   * **Plug-ins** > *Install and manage scripts* > *Email on modet*
-   * When that plugin downloads, go back a screen and turn it on.
-   * After tapping the on button, tap on *Email on modet* in the **Plug-ins** page to take you to an options page for the plugin.
-   * Tap on *Install uploader plugin* to be taken back to the Play store to another app by the same developer which will enable you to send yourself emails.
-   * Once this uploader plugin is installed you'll need to tap on *Select uploader* and choose *Email uploader* which will take you to another options page where you can fill in your email credentials.
-   * If you're using Gmail along with 2-factor authentication, you can get an "App Password" by following [these instructions](https://support.google.com/accounts/answer/185833?hl=en).
-   * More app config info can be found about half-way down [this *howtogeek* tutorial](https://www.howtogeek.com/139373/how-to-turn-an-old-android-phone-into-a-networked-security-camera/).
+
+  **configuration.yaml**
+  ```yaml
+  android_ip_webcam:
+    - host: !secret front_door_webcam_ip_address
+      name: 'Front Door'
+      username: !secret front_door_webcam_user
+      password: !secret front_door_webcam_password
+      sensors:
+        - battery_level
+        - battery_temp
+        - motion
+      switches:
+        - video_recording
+        - night_vision
+  ```
+
+* There are a couple ways to email pictures to yourself when motion is detected via the IP Webcam. The first is within the mobile app itself. The main issue with this is that you can't really add any conditions on when to enable photo taking. It either does or it doesn't. An alternative is to do it within HA.
+   * **In-app Emailing via Plugin**
+      * **Plug-ins** > *Install and manage scripts* > *Email on modet*
+      * When that plugin downloads, go back a screen and turn it on.
+      * After tapping the on button, tap on *Email on modet* in the **Plug-ins** page to take you to an options page for the plugin.
+      * Tap on *Install uploader plugin* to be taken back to the Play store to another app by the same developer which will enable you to send yourself emails.
+      * Once this uploader plugin is installed you'll need to tap on *Select uploader* and choose *Email uploader* which will take you to another options page where you can fill in your email credentials.
+      * If you're using Gmail along with 2-factor authentication, you can get an "App Password" by following [these instructions](https://support.google.com/accounts/answer/185833?hl=en).
+      * More app config info can be found about half-way down [this *howtogeek* tutorial](https://www.howtogeek.com/139373/how-to-turn-an-old-android-phone-into-a-networked-security-camera/).
+  * **HA Notifications**
+      * There are several ways to set up HA to send yourself pictures. The first option I looked at was via a chatbot in [Telegram](https://home-assistant.io/components/notify.telegram/). However, it continually gave me timeouts. So, I moved on to [SMTP](https://home-assistant.io/components/notify.smtp/).
+      * I haven't set up my own email service on the Pi. I might look into it in the future, but for now I'm just using a free online email client.
+      * To get an image from the webcam, visit: `YOUR.LOCAL.CAM.IP:8080/photo.jpg`. If you set up a username/password, you'll have to enter it before seeing the image.
+      * One issue with SMTP is that you can't use a username/password on the action when pulling from a URL, so I set up a `shell_command`. This runs `wget` to pull the image from the URL to local storage and then fires off the SMTP call pointing to that image.
+      
+      **configuration.yaml**
+      ```yaml
+        notify:
+          ...
+          - name: SMTP
+            platform: smtp
+            server: !secret smtp_server
+            port: !secret smtp_port
+            timeout: 15
+            sender: !secret smtp_sender
+            username: !secret smtp_user
+            password: !secret smtp_pass
+            recipient:
+              - !secret smtp_recipient_1
+              - !secret smtp_recipient_2
+            sender_name: !secret smtp_sender_name
+
+        ...
+
+        shell_command:
+          # snapshot_command = " wget --user=USERNAME --password=PASSWORD http://IP.WEB.CAM.ADDRESS:8080/photo.jpg -P DEST_DIR"
+          # The space is to prevent this from being saved in history
+          take_snapshot: !secret snapshot_command
+      ```
+      **scripts.yaml**
+      ```yaml
+        front_door_motion:
+          sequence:
+            ...
+            - alias: Save Snapshot
+              service: shell_command.take_snapshot
+            - delay:
+                seconds: 20
+            - alias: Front Door Snap
+              service: notify.smtp
+              data:
+                title: 'Motion Detected!'
+                message: 'Photo attached'
+                data:
+                  images:
+                    - !secret snapshot_location
+      ```
+
 
 You'll also want to give your phone a static IP address in order to tie things in on the HA side. For more on configuring HA see [here](https://www.howtogeek.com/139373/how-to-turn-an-old-android-phone-into-a-networked-security-camera/).
 
+## Device Tracking
+
+[Device tracking](https://home-assistant.io/components/device_tracker/) is another feature of HA that has a number of different approaches. I'm using this currently to automatically arm/disarm my alarm panel based upon whether or not anyone is home. I ended up using [CloudMQTT](https://home-assistant.io/docs/mqtt/broker/#cloudmqtt) and [OwnTracks](https://home-assistant.io/components/device_tracker.owntracks/) to write these automations. Then I used [Zone triggers](https://home-assistant.io/docs/automation/trigger/#zone-trigger) to fire them off. [This video](https://youtu.be/VaWdvVVYU3A) provides a good way to get started. The first half is dedicated to explaining what MQTT is and the second half shows you how to set it up.
+
+You'll also want to look into setting up [zones](https://home-assistant.io/components/zone/) within HA and matching [regions](https://home-assistant.io/components/device_tracker.owntracks/#using-owntracks-regions) within OwnTracks.
+
+**configuration.yaml**
 ```yaml
-android_ip_webcam:
-  - host: !secret front_door_webcam_ip_address
-    name: 'Front Door'
-    username: !secret front_door_webcam_user
-    password: !secret front_door_webcam_password
-    sensors:
-      - battery_level
-      - battery_temp
-      - motion
-    switches:
-      - video_recording
-      - night_vision
+  device_tracker:
+    - platform: owntracks
+      max_gps_accuracy: 200
+      waypoints: True
+      waypoint_whitelist:
+        - !secret device_id
+```
+
+**automations.yaml**
+```yaml
+  - alias: Turn Alarm on When Away
+    trigger:
+      - platform: zone
+        entity_id: device_tracker.USER1
+        zone: zone.home
+        event: leave
+      - platform: zone
+        entity_id: device_tracker.USER2
+        zone: zone.home
+        event: leave
+    condition:
+      condition: template
+      # Template used for conditional on zone state
+      value_template: "{% if states('device_tracker.USER1') != 'home' and states('device_tracker.USER2') != 'home' %}true{% else %}false{% endif %}"
+    action:
+      - service: alarm_control_panel.alarm_arm_away
+        entity_id: alarm_control_panel.silent_alarm
 ```
 
 ## Secrets
@@ -221,7 +350,7 @@ homeassistant:
   latitude: !secret ha_latitude
   longitude: !secret ha_longitude
   # Impacts weather/sunrise data (altitude above sea level in meters)
-  elevation:
+  elevation: 1596
   # metric for Metric, imperial for Imperial
   unit_system: imperial
   # Pick yours from here: http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -229,27 +358,42 @@ homeassistant:
   customize: !include customize.yaml
 
 android_ip_webcam:
-  - host: !secret front_door_webcam_ip_address
-    name: 'Front Door'
-    username: !secret front_door_webcam_user
-    password: !secret front_door_webcam_password
-    sensors:
-      - battery_level
-      - battery_temp
-      - motion
-    switches:
-      - video_recording
-      - night_vision
+ - host: !secret front_door_webcam_ip_address
+   name: 'Front Door'
+   username: !secret front_door_webcam_user
+   password: !secret front_door_webcam_password
+   scan_interval: 4
+   sensors:
+     - battery_level
+     - battery_temp
+     - motion
+   switches:
+     - video_recording
+     - night_vision
+     - torch
+
+mqtt:
+  broker: !secret mqtt_broker
+  port: !secret mqtt_port
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+
+device_tracker:
+  - platform: owntracks
+    max_gps_accuracy: 200
+    waypoints: True
+    waypoint_whitelist:
+      - !secret device_id
 
 alarm_control_panel:
   - platform: manual
     name: "Silent Alarm"
-    pending_time: 45
+    pending_time: 20
     trigger_time: 5
     disarm_after_trigger: false
   - platform: manual
     name: "Noisy Alarm"
-    pending_time: 45
+    pending_time: 20
     trigger_time: 5
     disarm_after_trigger: false
 
@@ -273,10 +417,31 @@ updater:
   # Optional, allows Home Assistant developers to focus on popular components.
   # include_used_components: true
 
+telegram_bot:
+  - platform: broadcast
+    api_key: !secret telegram_api_key
+    allowed_chat_ids:
+      - !secret telegram_chat_id
+
 notify:
-  platform: html5
-  gcm_api_key: !secret google_notify_gcm_api_key
-  gcm_sender_id: !secret google_notify_gcm_sender_id
+  - platform: html5
+    gcm_api_key: !secret google_notify_gcm_api_key
+    gcm_sender_id: !secret google_notify_gcm_sender_id
+  - name: Telegram Bot
+    platform: telegram
+    chat_id: !secret telegram_chat_id
+  - name: SMTP
+    platform: smtp
+    server: !secret smtp_server
+    port: !secret smtp_port
+    timeout: 15
+    sender: !secret smtp_sender
+    username: !secret smtp_user
+    password: !secret smtp_pass
+    recipient:
+      - !secret smtp_recipient_1
+      - !secret smtp_recipient_2
+    sender_name: !secret smtp_sender_name
 
 # Discover some devices automatically
 discovery:
@@ -289,6 +454,9 @@ history:
 
 # View all events in a logbook
 logbook:
+
+shell_command:
+  take_snapshot: !secret snapshot_command
 
 # Track the sun
 sun:
@@ -306,6 +474,8 @@ script: !include scripts.yaml
 tts:
   - platform: google
 
+zone:
+
 zwave:
   usb_path: /dev/zwave
 
@@ -320,7 +490,7 @@ My ZWave devices added a bunch of sensors by default. I wanted to hide them, but
 You can find the names of the sensors in the UI by clicking on the sensor you'd like to hide.
 
 ```yaml
-sensor.living_room_motion_detector_alarm_level:
+sensor.living_room_motion_detector_alarm_level: 
   hidden: true
 sensor.living_room_motion_detector_alarm_type:
   hidden: true
@@ -364,11 +534,17 @@ sensor.lyras_window_burglar:
   hidden: true
 sensor.lyras_window_power_management:
   hidden: true
+sensor.lyras_window_sourcenodeid:
+  hidden: true
 script.silent_alarm_script:
   hidden: true
 script.noisy_alarm_script:
   hidden: true
 script.front_door_motion:
+  hidden: true
+script.front_door_motion_off:
+  hidden: true
+script.front_door_motion_torch:
   hidden: true
 script.night_vision_off:
   hidden: true
@@ -379,10 +555,12 @@ automation.arm_silent_alarm:
 automation.arm_noisy_alarm:
   hidden: true
 automation.front_door_motion:
+  hidden: false
+automation.night_vision_camera_off_at_sunrise:
   hidden: true
-automation.night_vision_camera_off:
+automation.night_vision_camera_on_at_sunset:
   hidden: true
-automation.night_vision_camera_on:
+automation.front_door_motion_recording_off:
   hidden: true
 ```
 
@@ -427,12 +605,41 @@ The entity names are essentially the lower-case type of entity followed by a per
   trigger:
     - platform: numeric_state
       entity_id: sensor.front_door_motion
-      above: '5'
+      above: '150'
+  condition:
+    condition: state
+    entity_id: switch.front_door_torch
+    state: 'off'
+    # Torch state change will set off motion detection, so force it to wait until inactive for 45 seconds
+    for:
+      seconds: 45
   action:
+    - service: script.turn_on
+      entity_id: script.front_door_motion_torch
     - service: script.turn_on
       entity_id: script.front_door_motion
 
-- alias: Night Vision Camera On
+- alias: Front Door Motion Recording Off
+  trigger:
+    - platform: state
+      entity_id: switch.front_door_video_recording
+      to: 'on'
+      for:
+        minutes: 2
+  condition:
+    condition: or
+    conditions:
+      - condition: state
+        entity_id: alarm_control_panel.silent_alarm
+        state: armed_away
+      - condition: state
+        entity_id: alarm_control_panel.noisy_alarm
+        state: armed_away
+  action:
+    - service: script.turn_on
+      entity_id: script.front_door_motion_off
+
+- alias: Night Vision Camera On At Sunset
   trigger:
     - platform: sun
       event: sunset
@@ -440,13 +647,69 @@ The entity names are essentially the lower-case type of entity followed by a per
     - service: script.turn_on
       entity_id: script.night_vision_on
 
-- alias: Night Vision Camera Off
+- alias: Night Vision Camera Off at Sunrise
   trigger:
     - platform: sun
       event: sunrise
   action:
     - service: script.turn_on
       entity_id: script.night_vision_off
+
+- alias: Turn Alarm on at 11 When Home
+  trigger:
+    platform: time
+    at: '23:30:00'
+  condition:
+    condition: zone
+    entity_id: device_tracker.USER1
+    zone: zone.home
+  action:
+    - service: alarm_control_panel.alarm_arm_away
+      entity_id: alarm_control_panel.silent_alarm
+
+- alias: Turn Alarm off at 6 When Home
+  trigger:
+    platform: time
+    at: '06:00:00'
+  condition:
+    condition: zone
+    entity_id: device_tracker.USER1
+    zone: zone.home
+  action:
+    - service: alarm_control_panel.alarm_disarm
+      entity_id: alarm_control_panel.silent_alarm
+
+- alias: Turn Alarm on When Away
+  trigger:
+    - platform: zone
+      entity_id: device_tracker.USER1
+      zone: zone.home
+      event: leave
+    - platform: zone
+      entity_id: device_tracker.USER2
+      zone: zone.home
+      event: leave
+  condition:
+    condition: template
+    # template used to check status of both users in condition
+    value_template: "{% if states('device_tracker.USER1') != 'home' and states('device_tracker.USER2') != 'home' %}true{% else %}false{% endif %}"
+  action:
+    - service: alarm_control_panel.alarm_arm_away
+      entity_id: alarm_control_panel.silent_alarm
+
+- alias: Turn Alarm off When Home
+  trigger:
+    - platform: zone
+      entity_id: device_tracker.USER1
+      zone: zone.home
+      event: enter
+    - platform: zone
+      entity_id: device_tracker.USER2
+      zone: zone.home
+      event: enter
+  action:
+    - service: alarm_control_panel.alarm_disarm
+      entity_id: alarm_control_panel.silent_alarm
 ```
 
 ## Scripts yaml
@@ -463,11 +726,13 @@ silent_alarm_script:
       entity_id: media_player.living_room_home
       data:
         message: 'Intruder detected. The authorities have been notified.'
+
 noisy_alarm_script:
   sequence:
     - alias: Siren Noisy Alarm
       service: switch.turn_on
       entity_id: switch.siren
+
 front_door_motion:
   sequence:
     - alias: Google Home Front Door
@@ -475,11 +740,71 @@ front_door_motion:
       entity_id: media_player.living_room_home
       data:
         message: 'Someone is near the front door.'
+    - condition: or
+      conditions:
+        - condition: state
+          entity_id: alarm_control_panel.silent_alarm
+          state: armed_away
+        - condition: state
+          entity_id: alarm_control_panel.noisy_alarm
+          state: armed_away
+    - alias: Record front door camera
+      service: switch.turn_on
+      entity_id: switch.front_door_video_recording
+    - alias: Save Snapshot
+      service: shell_command.take_snapshot
+    - delay:
+        seconds: 20
+    - alias: Front Door Snap
+      service: notify.smtp
+      data:
+        title: 'Motion Detected!'
+        message: 'Photo attached'
+        data:
+          images:
+            - !secret snapshot_location
+
+front_door_motion_torch:
+  sequence:
+    - condition: and
+      conditions:
+        - condition: sun
+          after: sunset
+        - condition: or
+          conditions:
+            - condition: state
+              entity_id: alarm_control_panel.silent_alarm
+              state: armed_away
+            - condition: state
+              entity_id: alarm_control_panel.noisy_alarm
+              state: armed_away
+    - alias: Turn on torch
+      service: switch.turn_on
+      entity_id: switch.front_door_torch
+    - alias: Night Vision Off
+      service: switch.turn_off
+      entity_id: switch.front_door_night_vision
+
+front_door_motion_off:
+  sequence:
+    - alias: Recording Off
+      service: switch.turn_off
+      entity_id: switch.front_door_video_recording
+    - alias: Torch Off
+      service: switch.turn_off
+      entity_id: switch.front_door_torch
+    - condition: sun
+      after: sunset
+    - alias: Night Vision On
+      service: switch.turn_on
+      entity_id: switch.front_door_night_vision
+
 night_vision_on:
   sequence:
     - alias: Night Vision On
       service: switch.turn_on
       entity_id: switch.front_door_night_vision
+
 night_vision_off:
   sequence:
     - alias: Night Vision Off
