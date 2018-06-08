@@ -833,3 +833,16 @@ alarm_triggers:
 * Restart HA: `sudo systemctl restart home-assistant@homeassistant.service -l`
 * Most recently installed packages: `grep " install " /var/log/dpkg.log`
 * Restart `nginx`: `sudo /etc/init.d/nginx restart`
+
+## Updating
+
+* Stop: `sudo systemctl stop home-assistant@homeassistant.service -l`
+* Change to homeassistant user
+* `cd /srv/homeassistant`
+* `source bin/activate`
+* `python3 -m pip install --upgrade homeassistant`
+* Start: `sudo systemctl start home-assistant@homeassistant.service -l`
+
+## Troubleshooting
+
+* NGINX: Problems so far have been stemming from something with my router. Removing port forwarding and then replacing the forwards seems to be working whenever I get an infinite loading screen.
